@@ -1,0 +1,14 @@
+#+title: 🖼️ wpgen
+
+=wpgen= is a random maze image generator. It writes the generated PNG
+image to stdout (or a file, if stdout is a terminal). Its output can
+then be transformed using =imagemagick= to create a nice background
+for your desktop.
+
+#+begin_src shell
+$ wpgen --help
+usage: wpgen <fg> <bg> <width> <height> [step]
+$ wpgen 2f822f 00422a 251 199 4 | magick - -magnify example.png
+#+end_src
+
+[[example.png]]
