@@ -1,35 +1,46 @@
 #include "maze.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <fcntl.h>
 #include <stb/stb_image_write.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 enum {
 	MAX_WIDTH = 32768,
 	MAX_HEIGHT = 32768,
 };
 
-const char *out = "out.png";
+void
+writefn(void *context, void *data, int size)
+{
+	int *fd = context;
+	write(*fd, data, size);
+}
 
 void
-wpgen(const char *filename, uint32_t fg, uint32_t bg,
-    const bool *grid, size_t width, size_t height)
+run(int fd, uint32_t fg, uint32_t bg, size_t width, size_t height, size_t step)
 {
 	size_t comp = 3;
-	size_t sz = width * height;
-	uint8_t *image = malloc(sizeof(uint8_t[comp * sz]));
-	for (size_t i = 0; i < sz; i++) {
+	size_t stride = width * comp;
+	size_t len = width * height;
+	bool *grid = malloc(len);
+	uint8_t *image = malloc(sizeof(uint8_t[comp * len]));
+	maze_fill(grid, width, height, step);
+	for (size_t i = 0; i < len; i++) {
 		uint32_t color = grid[i] ? fg : bg;
 		for (size_t j = 0; j < comp; j++) {
 			size_t rsh = 8 * (comp - j - 1);
 			image[comp * i + j] = 0xff & (color >> rsh);
 		}
 	}
-	stbi_write_png(filename, width, height, comp, image, width * comp);
+
+	stbi_write_png_to_func(writefn, &fd, width, height, comp, image, stride);
 	free(image);
+	free(grid);
 }
 
 bool
@@ -48,6 +59,8 @@ die(const char *s)
 int
 main(int argc, char *argv[])
 {
+	srand(time(NULL));
+
 	if (argc != 5 && argc != 6) {
 		die("usage: wpgen <fg> <bg> <width> <height> [step]\n");
 	}
@@ -80,10 +93,10 @@ main(int argc, char *argv[])
 		}
 	}
 
-	bool *grid = malloc(width * height);
-	srand(time(NULL));
-	maze_fill(grid, width, height, step);
-	wpgen(out, fg, bg, grid, width, height);
-	free(grid);
+	int fd = 1;
+	if (isatty(fd)) {
+		fd = open("wpgen.png", O_RDWR | O_CREAT | O_TRUNC, 0666);
+	}
+	run(fd, fg, bg, width, height, step);
 	return 0;
 }
