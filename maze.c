@@ -19,26 +19,27 @@ struct maze {
 	bool *grid;
 	size_t width;
 	size_t height;
+	size_t step;
 };
 
 static enum dir randdir(const struct maze *, size_t, size_t);
 static bool inbounds(const struct maze *, size_t, size_t);
 static double randf(void);
 
-static const size_t stepsz = 3;
 static const int dirdr[] = {0, -1, 0, 1, 0};
 static const int dirdc[] = {0, 0, -1, 0, 1};
 static const enum dir revdir[]
     = {DIR_ZERO, DIR_DOWN, DIR_RIGHT, DIR_UP, DIR_LEFT};
 
 void
-maze_fill(bool *grid, size_t width, size_t height)
+maze_fill(bool *grid, size_t width, size_t height, size_t step)
 {
 	memset(grid, false, width * height);
 	struct maze m = {
 	    .grid = grid,
 	    .width = width,
 	    .height = height,
+	    .step = step,
 	};
 	enum dir *backtrack = calloc(width * height, sizeof(enum dir));
 
@@ -51,11 +52,11 @@ maze_fill(bool *grid, size_t width, size_t height)
 			if (back == DIR_ZERO) {
 				break;
 			}
-			r += dirdr[back] * stepsz;
-			c += dirdc[back] * stepsz;
+			r += dirdr[back] * step;
+			c += dirdc[back] * step;
 			continue;
 		}
-		for (size_t i = 0; i < stepsz; i++) {
+		for (size_t i = 0; i < step; i++) {
 			r += dirdr[d];
 			c += dirdc[d];
 			grid[r * width + c] = true;
@@ -71,8 +72,8 @@ randdir(const struct maze *m, size_t r, size_t c)
 	enum dir choice;
 	int nvalid = 1;
 	for (enum dir d = DIR_ZERO; d < DIR_N; d++) {
-		size_t newr = dirdr[d] * stepsz + r;
-		size_t newc = dirdc[d] * stepsz + c;
+		size_t newr = dirdr[d] * m->step + r;
+		size_t newc = dirdc[d] * m->step + c;
 		if (!inbounds(m, newr, newc)) {
 			continue;
 		}
