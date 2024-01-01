@@ -22,25 +22,23 @@ writefn(void *context, void *data, int size)
 }
 
 void
-run(int fd, uint32_t fg, uint32_t bg, size_t width, size_t height, size_t step)
+run(int fd, uint32_t fg, uint32_t bg,
+    const bool *grid, size_t width, size_t height)
 {
 	size_t comp = 3;
-	size_t stride = width * comp;
-	size_t len = width * height;
-	bool *grid = malloc(len);
-	uint8_t *image = malloc(sizeof(uint8_t[comp * len]));
-	maze_fill(grid, width, height, step);
-	for (size_t i = 0; i < len; i++) {
+	size_t gridsz = width * height;
+	uint8_t *image = malloc(sizeof(uint8_t[comp * gridsz]));
+
+	for (size_t i = 0; i < gridsz; i++) {
 		uint32_t color = grid[i] ? fg : bg;
 		for (size_t j = 0; j < comp; j++) {
 			size_t rsh = 8 * (comp - j - 1);
 			image[comp * i + j] = 0xff & (color >> rsh);
 		}
 	}
-
-	stbi_write_png_to_func(writefn, &fd, width, height, comp, image, stride);
+	stbi_write_png_to_func(writefn, &fd,
+	    width, height, comp, image, width * comp);
 	free(image);
-	free(grid);
 }
 
 bool
@@ -97,6 +95,17 @@ main(int argc, char *argv[])
 	if (isatty(fd)) {
 		fd = open("wpgen.png", O_RDWR | O_CREAT | O_TRUNC, 0666);
 	}
-	run(fd, fg, bg, width, height, step);
+
+	struct maze m;
+	m.grid = calloc(width * height, sizeof(bool));
+	m.width = width;
+	m.height = height;
+	m.step = step;
+	m.ox = 1;
+	m.oy = 1;
+
+	maze_fill(&m);
+	run(fd, fg, bg, m.grid, width, height);
+	free(m.grid);
 	return 0;
 }

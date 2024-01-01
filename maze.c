@@ -15,13 +15,6 @@ enum dir {
 	DIR_N,
 };
 
-struct maze {
-	bool *grid;
-	size_t width;
-	size_t height;
-	size_t step;
-};
-
 static enum dir randdir(const struct maze *, size_t, size_t);
 static bool inbounds(const struct maze *, size_t, size_t);
 static double randf(void);
@@ -32,35 +25,28 @@ static const enum dir revdir[]
     = {DIR_ZERO, DIR_DOWN, DIR_RIGHT, DIR_UP, DIR_LEFT};
 
 void
-maze_fill(bool *grid, size_t width, size_t height, size_t step)
+maze_fill(struct maze *m)
 {
-	memset(grid, false, width * height);
-	struct maze m = {
-	    .grid = grid,
-	    .width = width,
-	    .height = height,
-	    .step = step,
-	};
-	enum dir *backtrack = calloc(width * height, sizeof(enum dir));
-
-	size_t r = 1, c = 1;
-	grid[r * width + c] = true;
+	size_t gridsz = m->width * m->height;
+	enum dir *backtrack = calloc(gridsz, sizeof(enum dir));
+	size_t r = m->oy, c = m->ox;
+	m->grid[r * m->width + c] = true;
 	for (;;) {
-		enum dir d = randdir(&m, r, c);
+		enum dir d = randdir(m, r, c);
 		if (d == DIR_ZERO) {
-			enum dir back = backtrack[r * width + c];
+			enum dir back = backtrack[r * m->width + c];
 			if (back == DIR_ZERO) {
 				break;
 			}
-			r += dirdr[back] * step;
-			c += dirdc[back] * step;
+			r += dirdr[back] * m->step;
+			c += dirdc[back] * m->step;
 			continue;
 		}
-		for (size_t i = 0; i < step; i++) {
+		for (size_t i = 0; i < m->step; i++) {
 			r += dirdr[d];
 			c += dirdc[d];
-			grid[r * width + c] = true;
-			backtrack[r * width + c] = revdir[d];
+			m->grid[r * m->width + c] = true;
+			backtrack[r * m->width + c] = revdir[d];
 		}
 	}
 	free(backtrack);
@@ -69,8 +55,8 @@ maze_fill(bool *grid, size_t width, size_t height, size_t step)
 static enum dir
 randdir(const struct maze *m, size_t r, size_t c)
 {
-	enum dir choice;
-	int nvalid = 1;
+	enum dir choice = DIR_ZERO;
+	int nvalid = 0;
 	for (enum dir d = DIR_ZERO; d < DIR_N; d++) {
 		size_t newr = dirdr[d] * m->step + r;
 		size_t newc = dirdc[d] * m->step + c;
@@ -80,10 +66,9 @@ randdir(const struct maze *m, size_t r, size_t c)
 		if (m->grid[newr * m->width + newc]) {
 			continue;
 		}
-		if (randf() <= (1.0 / nvalid)) {
+		if (randf() <= (1.0 / ++nvalid)) {
 			choice = d;
 		}
-		nvalid++;
 	}
 	return choice;
 }
