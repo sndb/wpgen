@@ -6,9 +6,10 @@ then be transformed using =imagemagick= to create a nice background
 for your desktop.
 
 #+begin_src shell
-$ wpgen --help
-usage: wpgen <fg> <bg> <width> <height> [step]
-$ wpgen 2f822f 00422a 251 199 4 | magick - -magnify example.png
+$ wpgen
+usage: wpgen -width SIZE -height SIZE [-fg COLOR] [-bg COLOR] [-step SIZE] [-x-offset SIZE] [-y-offset SIZE]
+
+$ wpgen -fg 2f822f -bg 00422a -width 251 -height 199 -step 4 -x-offset 1 -y-offset 1 | magick - -magnify example.png
 #+end_src
 
 [[example.png]]

@@ -50,7 +50,11 @@ isrgb(uint32_t x)
 void
 die(const char *s)
 {
-	fputs(s, stderr);
+	if (s != NULL) {
+		fputs(s, stderr);
+	}
+	fputs("usage: wpgen -width SIZE -height SIZE [-fg COLOR] [-bg COLOR] "
+	      "[-step SIZE] [-x-offset SIZE] [-y-offset SIZE]\n", stderr);
 	exit(1);
 }
 
@@ -59,36 +63,85 @@ main(int argc, char *argv[])
 {
 	srand(time(NULL));
 
-	if (argc != 5 && argc != 6) {
-		die("usage: wpgen <fg> <bg> <width> <height> [step]\n");
-	}
+	uint32_t fg = 0xffffff, bg = 0x000000;
+	size_t width = 0, height = 0;
+	size_t ox = 0, oy = 0;
+	size_t step = 2;
 
-	uint32_t fg = strtol(argv[1], NULL, 16);
-	if (!isrgb(fg)) {
-		die("wpgen: bad fg\n");
-	}
-
-	uint32_t bg = strtol(argv[2], NULL, 16);
-	if (!isrgb(bg)) {
-		die("wpgen: bad bg\n");
-	}
-
-	size_t width = atoi(argv[3]);
-	if (width < 1 || width > MAX_WIDTH) {
-		die("wpgen: bad width\n");
-	}
-
-	size_t height = atoi(argv[4]);
-	if (height < 1 || height > MAX_HEIGHT) {
-		die("wpgen: bad height\n");
-	}
-
-	size_t step = 3;
-	if (argc > 5) {
-		step = atoi(argv[5]);
-		if (step < 2 || step > width - 2) {
-			die("wpgen: step size must be in [2, WIDTH - 2]\n");
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp("-fg", argv[i])) {
+			if (++i >= argc) {
+				die("-fg requires an argument");
+			}
+			fg = strtol(argv[i], NULL, 16);
+			if (!isrgb(fg)) {
+				die("-fg color must be a hexadecimal number\n");
+			}
+			continue;
 		}
+		if (!strcmp("-bg", argv[i])) {
+			if (++i >= argc) {
+				die("-bg requires an argument");
+			}
+			bg = strtol(argv[i], NULL, 16);
+			if (!isrgb(bg)) {
+				die("-bg color must be a hexadecimal number\n");
+			}
+			continue;
+		}
+		if (!strcmp("-width", argv[i])) {
+			if (++i >= argc) {
+				die("-width requires an argument");
+			}
+			width = atoi(argv[i]);
+			if (width > MAX_WIDTH) {
+				die("width must be in [1, MAX_WIDTH]\n");
+			}
+			continue;
+		}
+		if (!strcmp("-height", argv[i])) {
+			if (++i >= argc) {
+				die("-height requires an argument");
+			}
+			height = atoi(argv[i]);
+			if (height > MAX_HEIGHT) {
+				die("height must be in [1, MAX_HEIGHT]\n");
+			}
+			continue;
+		}
+		if (!strcmp("-step", argv[i])) {
+			if (++i >= argc) {
+				die("-step requires an argument");
+			}
+			step = atoi(argv[i]);
+			if (step < 2 || step > width - 2) {
+				die("step must be in [2, WIDTH - 2]\n");
+			}
+			continue;
+		}
+		if (!strcmp("-x-offset", argv[i])) {
+			if (++i >= argc) {
+				die("-x-offset requires an argument");
+			}
+			ox = atoi(argv[i]);
+			if (ox > width) {
+				die("x-offset must be in [0, WIDTH]\n");
+			}
+			continue;
+		}
+		if (!strcmp("-y-offset", argv[i])) {
+			if (++i >= argc) {
+				die("-y-offset requires an argument");
+			}
+			oy = atoi(argv[i]);
+			if (oy > height) {
+				die("y-offset must be in [0, HEIGHT]\n");
+			}
+			continue;
+		}
+	}
+	if (width == 0 || height == 0) {
+		die(NULL);
 	}
 
 	int fd = 1;
@@ -101,8 +154,8 @@ main(int argc, char *argv[])
 	m.width = width;
 	m.height = height;
 	m.step = step;
-	m.ox = 1;
-	m.oy = 1;
+	m.ox = ox;
+	m.oy = oy;
 
 	maze_fill(&m);
 	run(fd, fg, bg, m.grid, width, height);
