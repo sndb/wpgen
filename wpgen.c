@@ -14,6 +14,13 @@ enum {
 	MAX_HEIGHT = 32768,
 };
 
+const char *usage = "Usage: wpgen [OPTION]... WIDTH HEIGHT\n"
+                    "  -fg COLOR       Foreground color\n"
+                    "  -bg COLOR       Background color\n"
+                    "  -step PX        Distance between corridors\n"
+                    "  -x-offset PX    Initial X position\n"
+                    "  -y-offset PX    Initial Y position\n";
+
 void
 writefn(void *context, void *data, int size)
 {
@@ -53,8 +60,7 @@ die(const char *s)
 	if (s != NULL) {
 		fputs(s, stderr);
 	}
-	fputs("usage: wpgen -width SIZE -height SIZE [-fg COLOR] [-bg COLOR] "
-	      "[-step SIZE] [-x-offset SIZE] [-y-offset SIZE]\n", stderr);
+	fputs(usage, stderr);
 	exit(1);
 }
 
@@ -67,6 +73,21 @@ main(int argc, char *argv[])
 	size_t width = 0, height = 0;
 	size_t ox = 0, oy = 0;
 	size_t step = 2;
+
+	if (argc < 3) {
+		die(NULL);
+	}
+	width = atoi(argv[argc - 2]);
+	height = atoi(argv[argc - 1]);
+	if (width == 0 || height == 0) {
+		die(NULL);
+	}
+	if (width > MAX_WIDTH) {
+		die("width is too big\n");
+	}
+	if (height > MAX_HEIGHT) {
+		die("height is too big\n");
+	}
 
 	for (int i = 1; i < argc; i++) {
 		if (!strcmp("-fg", argv[i])) {
@@ -89,33 +110,13 @@ main(int argc, char *argv[])
 			}
 			continue;
 		}
-		if (!strcmp("-width", argv[i])) {
-			if (++i >= argc) {
-				die("-width requires an argument");
-			}
-			width = atoi(argv[i]);
-			if (width > MAX_WIDTH) {
-				die("width must be in [1, MAX_WIDTH]\n");
-			}
-			continue;
-		}
-		if (!strcmp("-height", argv[i])) {
-			if (++i >= argc) {
-				die("-height requires an argument");
-			}
-			height = atoi(argv[i]);
-			if (height > MAX_HEIGHT) {
-				die("height must be in [1, MAX_HEIGHT]\n");
-			}
-			continue;
-		}
 		if (!strcmp("-step", argv[i])) {
 			if (++i >= argc) {
 				die("-step requires an argument");
 			}
 			step = atoi(argv[i]);
 			if (step < 2 || step > width - 2) {
-				die("step must be in [2, WIDTH - 2]\n");
+				die("-step must be in [2, WIDTH - 2]\n");
 			}
 			continue;
 		}
@@ -125,7 +126,7 @@ main(int argc, char *argv[])
 			}
 			ox = atoi(argv[i]);
 			if (ox > width) {
-				die("x-offset must be in [0, WIDTH]\n");
+				die("-x-offset must be in [0, WIDTH]\n");
 			}
 			continue;
 		}
@@ -135,13 +136,10 @@ main(int argc, char *argv[])
 			}
 			oy = atoi(argv[i]);
 			if (oy > height) {
-				die("y-offset must be in [0, HEIGHT]\n");
+				die("-y-offset must be in [0, HEIGHT]\n");
 			}
 			continue;
 		}
-	}
-	if (width == 0 || height == 0) {
-		die(NULL);
 	}
 
 	int fd = 1;

@@ -7,9 +7,14 @@ for your desktop.
 
 #+begin_src shell
 $ wpgen
-usage: wpgen -width SIZE -height SIZE [-fg COLOR] [-bg COLOR] [-step SIZE] [-x-offset SIZE] [-y-offset SIZE]
-
-$ wpgen -fg 2f822f -bg 00422a -width 251 -height 199 -step 4 -x-offset 1 -y-offset 1 | magick - -magnify example.png
+Usage: wpgen [OPTION]... WIDTH HEIGHT
+  -fg COLOR       Foreground color
+  -bg COLOR       Background color
+  -step PX        Distance between corridors
+  -x-offset PX    Initial X position
+  -y-offset PX    Initial Y position
+$ wpgen -fg 2f822f -bg 00422a -step 4 -x-offset 1 -y-offset 1 251 199 > tmp.png
+$ magick tmp.png -magnify example.png
 #+end_src
 
 [[example.png]]
